@@ -15,8 +15,12 @@
  <div id="areaToRender">
  </div>
  <div>
-
- </div>
+    <button onclick="StartBoxes()">Boxes falling</button>
+    <button onclick="StartBalloon()">Balloon</button>
+    <button onclick="StartBalloonWithString()">Balloon with string</button>
+    <button onclick="CutTheRope()">Cut the rope</button>
+    <button onclick="StartSlingShot()">Sling shot</button>
+    </div>
 <script>
     //modulize
     let Engine = Matter.Engine, //enable methods
@@ -34,6 +38,8 @@
     let engine;
     let render;
     let runner; 
+
+    init()
         
     function init(){ //purpose: return the initial result of aggregate 
         engine = Engine.create();
@@ -79,9 +85,9 @@
         Composite.add(engine.world, [boxA, boxB, ground])
         Engine.update(engine)
     }
-    init()
+
     //StartBoxes() //how does this boxes move down to y axis without any code? 
-    StartBalloon()
+
     //example 2. Fly Balloons
     function StartBalloon(){
         clearWorld("Balloon")
@@ -110,6 +116,92 @@
 
         Engine.update(engine)
     }
+
+    //example 3. Balloon With String 
+    let ropes = []; //empty array 
+    function StartBalloonWithString(){
+        clearWorld("BalloonWithString")
+        engine.world.density = 1
+
+        let ballon1 = Bodies.circle(400,400,80,{ //this x, y becomes how far it is from the string 
+            mass: 0.001,
+            render: {
+                fillStyle: 'red',
+                strokeStyle: 'blue',
+                lineWidth: 3,
+            }
+        })
+
+        let ground = Bodies.rectangle(400,610,810,60,{isStatic: true});
+        Composite.add(engine.world, [ballon1, ground])
+
+        //add string 
+        let rope = Constraint.create({
+            pointA : {x: 200, y: 550},  //string start x,y point
+            bodyB: ballon1,
+            render: {strokeStyle: 'gray', lineWidth: 2,}
+        })
+
+        Composite.add(engine.world, rope)
+        ropes.push(rope)
+
+        setInterval(()=>{
+            Matter.Body.applyForce(ballon1, ballon1.position, {x: 0, y: -ballon1.mass / 100})
+        },100)
+
+        Engine.update(engine);
+    }
+
+    //example 4. Cut the Rope 
+    function CutTheRope(){
+        let rope = ropes[0]
+        Composite.remove(engine.world, rope)
+        ropes.shift() //delete array from beginning 
+    }
+
+    //example 5. SlingShot 
+    function StartSlingShot(){
+        clearWorld("slingshot")
+        let ground = Bodies.rectangle(395,600,815,50,{isStatic: true}); //floor setting
+        let rockOptions = {density: 0.004}; //why in the object??? 
+        let rock = Bodies.polygon(170,450,8,20,rockOptions)
+        let anchor = {x:170, y: 450}
+        let elastic = Constraint.create({
+            pointA: anchor, 
+            bodyB: rock,
+            stiffness: 0.05, //spring texture
+            render: {strokeStyle: 'gray', lineWidth: 2}
+        })
+        let ground2 = Bodies.rectangle(610,250,200,20,{isStatic:true}) //pyramid rocks floor 
+        let pyramid = Composites.pyramid(550,0,5,10,0,0,function(x,y){ //returning the blocks 
+            return Bodies.rectangle(x,y,25,40) 
+        })
+
+        let mouse = Mouse.create(render.canvas),
+            mouseConstraint = MouseConstraint.create(engine, {
+                mouse: mouse,
+                constraint: {
+                    stiffness: 0.2,
+                    render: {
+                        visible: false //hide green string from anchor 
+                    }
+                }
+            })
+
+        Events.on(engine, 'afterUpdate', function(){
+            if(mouseConstraint.mouse.button === -1 && (rock.position.x > 190 || rock.position.y < 430)){
+                rock = Bodies.polygon(170,450,7,20,rockOptions);
+                Composite.add(engine.world, rock)
+                elastic.bodyB = rock;
+            }
+        })
+
+        Composite.add(engine.world, [ground, ground2, pyramid, rock, elastic])
+        Composite.add(engine.world, mouseConstraint)
+        render.mouse = mouse;
+    }
+    //StartSlingShot() //how does this change color randomly? how it drops at the same point it drops?? how it detects rock touching pyramid rocks!! 
+    
 
 </script>
 </body>
