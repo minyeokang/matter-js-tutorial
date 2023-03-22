@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8">
+ <meta http-equiv="X-UA-Compatible" content="IE=edge">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>Physics Engine for JavaScript - Matter.js - CodeBrainer</title>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.17.1/matter.min.js"></script>
+ <style>
+ canvas { position: relative; width: 500px; height: 400px; background-color: white;
+ }
+ </style>
+</head>
+<body>
+ <div id="areaToRender">
+ </div>
+ <div>
+
+ </div>
+<script>
+    //modulize
+    let Engine = Matter.Engine, //enable methods
+        Render = Matter.Render, //basic canvas based renderer
+        Runner = Matter.Runner, //enable game loop 
+        Bodies = Matter.Bodies, //factory methods for creating body models such as rectangles... 
+        Composite = Matter.Composite, //container for compound obj (body, constraint, composite)
+        Composites = Matter.Composites, //for drawing commonly used layouts
+        Constraint = Matter.Constraint, //manipulating constraints
+        Mouse = Matter.Mouse, //manage mouse input
+        MouseConstraint = Matter.MouseConstraint, //creating its constraint 
+        Events = Matter.Events; //firing and listening event to other obj 
+
+    //dedicated objs
+    let engine;
+    let render;
+    let runner; 
+        
+    function init(){ //purpose: return the initial result of aggregate 
+        engine = Engine.create();
+        render = Render.create({
+            element: document.getElementById('areaToRender'),
+            engine: engine,
+            options: {
+                width: 800,
+                height: 600,
+                pixelRatio: 1,
+                background: '#fafafa',
+                wireframes: false // <-- important - without this its monochrome
+            }
+        });
+
+        Render.run(render);
+        runner = Runner.create();
+        Runner.run(runner, engine);
+    }
+
+    let lastClear = "(not given)"
+    function clearWorld(exampleName){
+        if(lastClear != exampleName){
+            lastClear = exampleName
+
+            Matter.Composite.clear(engine.world, false)
+        }
+    }
+
+    //example 1. Falling boxes 
+    function StartBoxes(){
+        clearWorld("Boxes")
+        let boxA = Bodies.rectangle(400,100,80,80); //x, y, w, h
+        let boxB = Bodies.rectangle(450,50,80,80,{ //boxB가 더 높은데서 올라오자 얘가 굴러떨어지는 효과가 나옴 
+            render: {
+                fillStyle: 'red',
+                strokeStyle: 'blue',
+                lineWidth: 3
+            }
+        })
+        let ground = Bodies.rectangle(400,610,810,60,{isStatic: true}); //with isStatic, it stops at the bottom, this ground control the area of motion 
+
+        Composite.add(engine.world, [boxA, boxB, ground])
+        Engine.update(engine)
+    }
+    init()
+    //StartBoxes() //how does this boxes move down to y axis without any code? 
+    StartBalloon()
+    //example 2. Fly Balloons
+    function StartBalloon(){
+        clearWorld("Balloon")
+        engine.world.density = 1
+
+        let balloon1 = Bodies.circle(450, 450, 80, {
+            mass: 0.001,
+            render: {
+                fillStyle: 'red',
+                strokeStyle: 'blue',
+                lineWidth: 3,
+            }
+        })
+
+        let ground = Bodies.rectangle(400,610,810,60,{isStatic: true});
+
+        Composite.add(engine.world, [balloon1, ground])
+
+        //0.1초에 한번씩 위로 올림으로써 위로 올라가는 효과 
+        setInterval(()=>{
+            Matter.Body.applyForce(balloon1, balloon1.position, {
+                x: 0,
+                y: -balloon1.mass / 100 //this becomes like speed? and the minus value makes the balloon go upward
+            })
+        },100)
+
+        Engine.update(engine)
+    }
+
+</script>
+</body>
+</html>
